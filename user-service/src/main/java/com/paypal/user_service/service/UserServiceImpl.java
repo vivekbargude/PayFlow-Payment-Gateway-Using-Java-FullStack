@@ -12,7 +12,7 @@ import java.util.Optional;
 @Service
 public class UserServiceImpl implements UserService{
 
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
     private final WalletClient walletClient;
 
     public UserServiceImpl(UserRepository userRepository, WalletClient walletClient) {
