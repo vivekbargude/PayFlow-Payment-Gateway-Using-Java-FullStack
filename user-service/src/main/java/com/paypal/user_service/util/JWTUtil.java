@@ -1,5 +1,6 @@
 package com.paypal.user_service.util;
 
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.springframework.stereotype.Component;
@@ -11,31 +12,32 @@ import io.jsonwebtoken.security.Keys;
 
 @Component
 public class JWTUtil {
-    public static final String SECRET = "secret123secret123secret123secret123secret123secret123";
+    private static final String SECRET = "secret123secret123secret123secret123secret123secret123";
 
-    public Key getSigningKey(){
+    private Key getSigningKey() {
         return Keys.hmacShaKeyFor(SECRET.getBytes());
     }
 
-    public String extractEmail(String token){
-        return Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody()
-                .getSubject();
-    }
-
-    public boolean validateToken(String token, String username){
-        try{
-            extractEmail(token);
-            return true;
-        }catch (Exception e){
+    public boolean validateToken(String token, String username) {
+        try {
+            String extractedUsername = extractUsername(token);
+            return (extractedUsername.equals(username) && !isTokenExpired(token));
+        } catch (JwtException e) {
+            // catches expired, malformed, or tampered tokens
             return false;
         }
     }
 
-    //Considering email id as the username
+    private boolean isTokenExpired(String token) {
+        Date expiration = Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .getExpiration();
+        return expiration.before(new Date());
+    }
+
     public String extractUsername(String token){
         return Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
@@ -58,6 +60,7 @@ public class JWTUtil {
                 .compact();
     }
 
+
     public String extractRole(String token) {
         return (String) Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
@@ -66,4 +69,22 @@ public class JWTUtil {
                 .getBody()
                 .get("role");
     }
+
+    public Long extractUserId(String token) {
+        return Long.parseLong(
+                Jwts.parserBuilder()
+                        .setSigningKey(getSigningKey())
+                        .build()
+                        .parseClaimsJws(token)
+                        .getBody()
+                        .get("userId").toString()
+        );
+    }
+
+
+
+
+
+
+
 }
